@@ -9,22 +9,23 @@ function errHandler(err) {
 }
 
 localConnection.ondatachannel = function (event) {
-	console.log('event', event);
-	functionalChannel(event.channel);
+	if (event.channel.label == "chat") {
+		console.log('chat Channel Received -', event);
+		channel.chat = event.channel;
+		chatChannel(event.channel);
+	}
 };
 
-function functionalChannel(event) {
-	if (event.label == "chatChannel") {
-		event.onopen = function (e) {
-			console.log('chat channel is open', e);
-		}
-		event.onmessage = function (e) {
-			console.log('chat channel have message', e);
-			chat.innerHTML = chat.innerHTML + "<pre>" + e.data + "</pre>"
-		}
-		event.onclose = function () {
-			console.log('chat channel closed');
-		}
+function chatChannel(event) {
+	channel.chat.onopen = function (event) {
+		console.log('chat channel is open', event);
+	}
+	channel.chat.onmessage = function (event) {
+		console.log('chat channel have message', event);
+		chat.innerHTML = chat.innerHTML + "<pre>" + event.data + "</pre>"
+	}
+	channel.chat.onclose = function () {
+		console.log('chat channel closed');
 	}
 }
 
@@ -64,8 +65,8 @@ remoteOfferGot.onclick = function () {
 
 localOfferSet.onclick = function () {
 	if (enable_chat.checked) {
-		channel.chat = localConnection.createDataChannel('chatChannel');
-		functionalChannel(channel.chat);
+		channel.chat = localConnection.createDataChannel('chat');
+		chatChannel(channel.chat);
 	}
 	localConnection.createOffer().then(des => {
 		console.log('createOffer ok ');
