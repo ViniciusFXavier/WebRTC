@@ -1,7 +1,7 @@
 var configuration = { iceServers: [{ urls: [] }] };
 const localConnection = new RTCPeerConnection(configuration);
 var remoteConnection = null;
-var localStream = null;
+var localStream = new MediaStream();
 
 var channel = [];
 
@@ -9,107 +9,9 @@ function errHandler(err) {
 	console.warn(err);
 }
 
-testeeeeeeeeeee.onclick = function () {
-	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (stream) {
-		localScreenStream.srcObject = stream;
-		stream.getTracks().forEach(function(track) {
-			track.applyConstraints({ name: "screen" })
-			console.log('screen', track);
-			localConnection.addTrack(track, stream);
-		});
-	}).catch(function (error) {
-		console.log('screen' + error.name, error.message)
-	});
-}
-
-function openCall() {
-	navigator.mediaDevices.getUserMedia({  audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (stream) {
-		localVideoStream.srcObject = stream;
-		stream.getTracks().forEach(function(track) {
-			console.log('camera', track);
-			localConnection.addTrack(track, stream);
-		});
-	}).catch(function (error) {
-		console.log('camera' + error.name, error.message)
-	});
-
-	
-}
-
-openCall();
-
-function closeCall() {
-	navigator.mediaDevices.getUserMedia({  audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (stream) {
-		stream.getTracks().forEach(function(track) { track.stop(); });
-	});
-
-	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (stream) {
-		stream.getTracks().forEach(function(track) { track.stop(); });
-	});
-}
-
-localConnection.ondatachannel = function (event) {
-	if (event.channel.label == "chat") {
-		console.log('chat Channel Received -', event);
-		channel.chat = event.channel;
-		chatChannel(event.channel);
-	}
-};
-
-
-function chatChannel(event) {
-	channel.chat.onopen = function (event) {
-		console.log('chat channel is open', event);
-	}
-	channel.chat.onmessage = function (event) {
-		console.log('chat channel have message', event);
-		chat.innerHTML = chat.innerHTML + "<pre>" + event.data + "</pre>"
-	}
-	channel.chat.onclose = function () {
-		console.log('chat channel closed');
-	}
-}
-
-localConnection.onicecandidate = function (event) {
-	var cand = event.candidate;
-	console.log('cand', cand);
-	if (!cand) {
-		console.log('iceGatheringState complete', localConnection.localDescription);
-		localOffer.value = JSON.stringify(localConnection.localDescription);
-	} else {
-		console.log('candidate', cand);
-	}
-}
-function gotRemoteStream(event) {
-	console.log('gotRemoteStream', event.track, event.streams);
-	remoteVideoStream.srcObject = null;
-	remoteScreenStream.srcObject = null;
-
-	console.log(event.track.getConstraints());
-	remoteScreenStream.srcObject =  event.streams[0];
-  }
-localConnection.ontrack = function(event) {
-	console.log('ontrack', event);
-	gotRemoteStream(event);
-  };
-
-localConnection.oniceconnectionstatechange = function () {
-	console.log('iceconnectionstatechange: ', localConnection.iceConnectionState);
-}
-
-localConnection.onconnectionstatechange = function (event) {
-	console.log('onconnectionstatechange ', localConnection.connectionState);
-	if (localConnection.connectionState === "connected") {
-		
-	} else if(localConnection.connectionState === "disconnected") {
-		closeCall();
-	} else if(localConnection.connectionState === "failed") {
-
-	} else if(localConnection.connectionState === "closed") {
-		closeCall();
-	}
-}
-
+//Connection
+getDisplayMedia();
+getUserMedia();
 remoteOfferGot.onclick = function () {
 	remoteConnection = new RTCSessionDescription(JSON.parse(remoteOffer.value));
 	console.log('remoteOffer \n', remoteConnection);
@@ -124,9 +26,9 @@ remoteOfferGot.onclick = function () {
 		}
 	}).catch(errHandler);
 }
-
 localOfferSet.onclick = function () {
-	if (enable_chat.checked) {
+	console.log('aaaaaaaaaaaaaaaaaaaaaaa')
+	if (enableChat.checked) {
 		channel.chat = localConnection.createDataChannel('chat');
 		chatChannel(channel.chat);
 	}
@@ -146,6 +48,99 @@ localOfferSet.onclick = function () {
 	}).catch(errHandler);
 }
 
+//Channel
+localConnection.ondatachannel = function (event) {
+	if (event.channel.label == "chat") {
+		console.log('chat Channel Received -', event);
+		channel.chat = event.channel;
+		chatChannel(event.channel);
+	}
+};
+function chatChannel(event) {
+	channel.chat.onopen = function (event) {
+		console.log('chat channel is open', event);
+	}
+	channel.chat.onmessage = function (event) {
+		console.log('chat channel have message', event);
+		chat.innerHTML = chat.innerHTML + "<pre>" + event.data + "</pre>"
+	}
+	channel.chat.onclose = function () {
+		console.log('chat channel closed');
+	}
+}
+
+// Get Media
+function getDisplayMedia() {
+	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (screenStream) {
+		console.log('screenStream', screenStream);
+		localStream.addTrack(screenStream.getVideoTracks()[0]);
+		localScreenStream.srcObject = localStream;
+		console.log('screenStream - localStream', localStream.getTracks());
+		localConnection.addTrack(localStream.getTracks()[0], screenStream);
+	}).catch(function (error) {
+		console.log('Screen: ' + error.name, error.message);
+	});
+}
+function getUserMedia() {
+	navigator.mediaDevices.getUserMedia({ audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (mediastream) {
+		console.log('mediastream', mediastream);
+		mediastream.getTracks().forEach(function(track) {
+			localStream.addTrack(track);
+		})
+		localVideoStream.srcObject = mediastream;
+		console.log('mediastream - localStream', localStream.getTracks());
+		localConnection.addTrack(localStream.getTracks()[0], mediastream);
+	}).catch(function (error) {
+		console.log('Media: ' + error.name, error.message);
+	});
+}
+
+localConnection.onicecandidate = function (event) {
+	var cand = event.candidate;
+	console.log('cand', cand);
+	if (!cand) {
+		console.log('iceGatheringState complete', localConnection.localDescription);
+		localOffer.value = JSON.stringify(localConnection.localDescription);
+	} else {
+		console.log('candidate', cand);
+	}
+}
+function gotRemoteStream(event) {
+	console.log('gotRemoteStream', event.track, event.streams);
+	remoteVideoStream.srcObject = null;
+	remoteScreenStream.srcObject = null;
+	var teste = false;
+	if (!teste){
+	 	teste = true;
+	 	remoteScreenStream.srcObject = event.streams[0];
+	 	return;
+	}
+
+	remoteVideoStream.srcObject = event.streams[0];
+}
+localConnection.ontrack = function (event) {
+	console.log('ontrack', event);
+	gotRemoteStream(event);
+};
+
+localConnection.oniceconnectionstatechange = function () {
+	console.log('iceconnectionstatechange: ', localConnection.iceConnectionState);
+}
+
+localConnection.onconnectionstatechange = function (event) {
+	console.log('onconnectionstatechange ', localConnection.connectionState);
+	connectionStatus.innerHTML = localConnection.connectionState;
+	if (localConnection.connectionState === "connected") {
+
+	} else if (localConnection.connectionState === "disconnected") {
+
+	} else if (localConnection.connectionState === "failed") {
+
+	} else if (localConnection.connectionState === "closed") {
+
+	}
+}
+
 function sendMsg() {
 	var text = sendTxt.value;
 	chat.innerHTML = chat.innerHTML + "<pre class='sent'>" + text + "</pre>";
@@ -153,3 +148,23 @@ function sendMsg() {
 	sendTxt.value = "";
 	return false;
 }
+
+// View
+enableStream.addEventListener('change', function () {
+	var divLocalStream = document.getElementById("divLocalStream");
+	if (this.checked) {
+		divLocalStream.classList.remove("display-none");
+	} else {
+		divLocalStream.classList.add("display-none");
+	}
+});
+
+enableChat.addEventListener('change', function () {
+	var divChat = document.getElementById("divChat");
+	if (this.checked) {
+		channel.chat = localConnection.createDataChannel('chat');
+		chatChannel(channel.chat);
+	} else {
+		channel.chat.close();
+	}
+});
