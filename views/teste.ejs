@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebRTC</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>WebRTC</h1>
+    <p>Welcome to WebRTC Test</p>
+
+    <hr>
+
+    <div>
+        <h3>Connection</h3>
+        <div>
+            <textarea rows="4" cols="50" id=localOffer></textarea>
+            <button id="localOfferSet">CreateOffer</button>
+        </div>
+
+        <div>
+            <textarea id="remoteOffer" rows="4" cols="50" placeholder="Paste remote SDP"></textarea>
+            <button id=remoteOfferGot>Answer</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div disabled="true">
+        <h3>Chat</h3>
+        <p>
+            <input type="checkbox" id="enable_chat" checked> Enable chat
+        </p>
+        <div id="chat" style="overflow:scroll; min-height: 100px"></div>
+        <form action="" onsubmit="event.preventDefault();return sendMsg();">
+            <input id=sendTxt type="text" name="" placeholder="chat here" size="50">
+            <button type="submit">send</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>Chat</h3>
+    </div>
+</body>
+<script src="javascripts/webrtc2.js"></script>
+
+</html>
