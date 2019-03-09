@@ -1,11 +1,51 @@
 var configuration = { iceServers: [{ urls: [] }] };
 const localConnection = new RTCPeerConnection(configuration);
 var remoteConnection = null;
+var localStream = null;
 
 var channel = [];
 
 function errHandler(err) {
 	console.warn(err);
+}
+
+testeeeeeeeeeee.onclick = function () {
+	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (stream) {
+		localScreenStream.srcObject = stream;
+		stream.getTracks().forEach(function(track) {
+			track.applyConstraints({ name: "screen" })
+			console.log('screen', track);
+			localConnection.addTrack(track, stream);
+		});
+	}).catch(function (error) {
+		console.log('screen' + error.name, error.message)
+	});
+}
+
+function openCall() {
+	navigator.mediaDevices.getUserMedia({  audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (stream) {
+		localVideoStream.srcObject = stream;
+		stream.getTracks().forEach(function(track) {
+			console.log('camera', track);
+			localConnection.addTrack(track, stream);
+		});
+	}).catch(function (error) {
+		console.log('camera' + error.name, error.message)
+	});
+
+	
+}
+
+openCall();
+
+function closeCall() {
+	navigator.mediaDevices.getUserMedia({  audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (stream) {
+		stream.getTracks().forEach(function(track) { track.stop(); });
+	});
+
+	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (stream) {
+		stream.getTracks().forEach(function(track) { track.stop(); });
+	});
 }
 
 localConnection.ondatachannel = function (event) {
@@ -15,6 +55,7 @@ localConnection.ondatachannel = function (event) {
 		chatChannel(event.channel);
 	}
 };
+
 
 function chatChannel(event) {
 	channel.chat.onopen = function (event) {
@@ -33,19 +74,40 @@ localConnection.onicecandidate = function (event) {
 	var cand = event.candidate;
 	console.log('cand', cand);
 	if (!cand) {
-		console.log('iceGatheringState complete', localConnection.localDescription.sdp);
+		console.log('iceGatheringState complete', localConnection.localDescription);
 		localOffer.value = JSON.stringify(localConnection.localDescription);
 	} else {
-		console.log('candidate', cand.candidate);
+		console.log('candidate', cand);
 	}
 }
+function gotRemoteStream(event) {
+	console.log('gotRemoteStream', event.track, event.streams);
+	remoteVideoStream.srcObject = null;
+	remoteScreenStream.srcObject = null;
+
+	console.log(event.track.getConstraints());
+	remoteScreenStream.srcObject =  event.streams[0];
+  }
+localConnection.ontrack = function(event) {
+	console.log('ontrack', event);
+	gotRemoteStream(event);
+  };
 
 localConnection.oniceconnectionstatechange = function () {
 	console.log('iceconnectionstatechange: ', localConnection.iceConnectionState);
 }
 
 localConnection.onconnectionstatechange = function (event) {
-	console.log('onconnection ', event);
+	console.log('onconnectionstatechange ', localConnection.connectionState);
+	if (localConnection.connectionState === "connected") {
+		
+	} else if(localConnection.connectionState === "disconnected") {
+		closeCall();
+	} else if(localConnection.connectionState === "failed") {
+
+	} else if(localConnection.connectionState === "closed") {
+		closeCall();
+	}
 }
 
 remoteOfferGot.onclick = function () {

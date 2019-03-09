@@ -85,7 +85,7 @@ localOfferSet.onclick = function () {
 		chatChannel(_chatChannel);
 		fileChannel(_fileChannel);
 	}
-	pc.createOffer().then(des => {
+	pc.createOffer({iceRestart: true}).then(des => {
 		console.log('createOffer ok ');
 		pc.setLocalDescription(des).then(() => {
 			setTimeout(function () {

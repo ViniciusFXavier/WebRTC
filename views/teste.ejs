@@ -54,19 +54,17 @@
                     <h4>Local</h4>
                     <div style="display: inline-block;">
                         <p>
-                            <input type="checkbox" id="enable_video_stream" checked>
+                            <input type="checkbox" id="enableVideoStream" checked>
                             <span>Camera</span>
-                            <input type="checkbox" id="enable_video_microphone" checked>
+                            <input type="checkbox" id="enableVideoMicrophone" checked>
                             <span>Enable Microphone</span>
                         </p>
-                        <video id="localVideoStream" autoplay controls></video>
+                        <video id="localVideoStream" autoplay muted controls></video>
                     </div>
                     <div style="display: inline-block;">
                         <p>
-                            <input type="checkbox" id="enable_screen_stream" checked>
+                            <input type="checkbox" id="enableScreenStream" checked>
                             <span>Screen</span>
-                            <input type="checkbox" id="enable_screen_sond" checked>
-                            <span>Enable sond</span>
                         </p>
                         <video id="localScreenStream" autoplay controls></video>
                     </div>
@@ -75,11 +73,11 @@
                     <h4>Remote</h4>
                     <div style="display: inline-block;">
                         <p>Camera</p>
-                        <video id="remote-video-stream" autoplay controls></video>
+                        <video id="remoteVideoStream" autoplay controls></video>
                     </div>
                     <div style="display: inline-block;">
                         <p>Screen</p>
-                        <video id="remote-screen-stream" autoplay controls></video>
+                        <video id="remoteScreenStream" autoplay controls></video>
                     </div>
                 </div>
             </div>
@@ -104,6 +102,7 @@
             </div>
         </div>
     </div>
+    <button id="testeeeeeeeeeee">testeeeeeeeeeee</button>
 </body>
 <script src="javascripts/webrtc2.js"></script>
 
