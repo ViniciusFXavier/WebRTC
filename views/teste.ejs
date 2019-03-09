@@ -7,42 +7,102 @@
 </head>
 
 <body>
-    <h1>WebRTC</h1>
-    <p>Welcome to WebRTC Test</p>
-
-    <hr>
-
-    <div>
-        <h3>Connection</h3>
-        <div>
-            <textarea rows="4" cols="50" id=localOffer></textarea>
-            <button id="localOfferSet">CreateOffer</button>
-        </div>
-
-        <div>
-            <textarea id="remoteOffer" rows="4" cols="50" placeholder="Paste remote SDP"></textarea>
-            <button id=remoteOfferGot>Answer</button>
-        </div>
+    <div id="header">
+        <h1>WebRTC</h1>
+        <p>Welcome to WebRTC Test</p>
     </div>
 
-    <hr>
+    <div class="content">
 
-    <div disabled="true">
-        <h3>Chat</h3>
-        <p>
-            <input type="checkbox" id="enable_chat" checked> Enable chat
-        </p>
-        <div id="chat" style="overflow:scroll; min-height: 100px"></div>
-        <form action="" onsubmit="event.preventDefault();return sendMsg();">
-            <input id=sendTxt type="text" name="" placeholder="chat here" size="50">
-            <button type="submit">send</button>
-        </form>
-    </div>
+        <div id="connection_functions" class="hr">
+            <h3>Connection</h3>
+            <div>
+                <textarea rows="4" cols="50" id=localOffer></textarea>
+                <button id="localOfferSet">CreateOffer</button>
+            </div>
 
-    <hr>
+            <div>
+                <textarea id="remoteOffer" rows="4" cols="50" placeholder="Paste remote SDP"></textarea>
+                <button id="remoteOfferGot">Answer</button>
+            </div>
+        </div>
 
-    <div>
-        <h3>Chat</h3>
+        <div id="connected_functions">
+
+            <div class="hr">
+                <h3>Chat</h3>
+                <p>
+                    <input type="checkbox" id="enable_chat" checked>
+                    <span>Enable chat</span>
+                </p>
+                <div>
+                    <div id="chat" style="overflow:scroll; min-height: 100px"></div>
+                    <form action="" onsubmit="event.preventDefault();return sendMsg();">
+                        <input id="sendTxt" type="text" name="" placeholder="chat here" size="50">
+                        <button type="submit">send</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="hr">
+                <h3>Stream</h3>
+                <p>
+                    <input type="checkbox" id="enable_stream" checked>
+                    <span>Enable Stream</span>
+                </p>
+                <div>
+                    <h4>Local</h4>
+                    <div style="display: inline-block;">
+                        <p>
+                            <input type="checkbox" id="enable_video_stream" checked>
+                            <span>Camera</span>
+                            <input type="checkbox" id="enable_video_microphone" checked>
+                            <span>Enable Microphone</span>
+                        </p>
+                        <video id="localVideoStream" autoplay controls></video>
+                    </div>
+                    <div style="display: inline-block;">
+                        <p>
+                            <input type="checkbox" id="enable_screen_stream" checked>
+                            <span>Screen</span>
+                            <input type="checkbox" id="enable_screen_sond" checked>
+                            <span>Enable sond</span>
+                        </p>
+                        <video id="localScreenStream" autoplay controls></video>
+                    </div>
+                </div>
+                <div>
+                    <h4>Remote</h4>
+                    <div style="display: inline-block;">
+                        <p>Camera</p>
+                        <video id="remote-video-stream" autoplay controls></video>
+                    </div>
+                    <div style="display: inline-block;">
+                        <p>Screen</p>
+                        <video id="remote-screen-stream" autoplay controls></video>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hr">
+                <h3>File transfer</h3>
+                <p>
+                    <input type="checkbox" id="enable_file_transfer" checked>
+                    <span>Enable File transfer</span>
+                </p>
+                <div>
+                    <progress value="0" id="sendFileProg"></progress>
+                    <input type="file" name="" id=fileTransfer>
+                    <button type="submit" onclick="sendFile()">send</button>
+                </div>
+                <div>
+                    <p>
+                        <progress value="0" id="recFileProg"></progress>
+                        <a href="" id=file_download></a>
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 <script src="javascripts/webrtc2.js"></script>

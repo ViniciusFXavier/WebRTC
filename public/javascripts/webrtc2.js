@@ -1,74 +1,92 @@
-var conf = { iceServers: [{ urls: [] }] };
-var pc = new RTCPeerConnection(conf);
-var localStream, _chatChannel;
+var configuration = { iceServers: [{ urls: [] }] };
+const localConnection = new RTCPeerConnection(configuration);
+var remoteConnection = null;
 
-function errHandler(name = '', message = '') {
-	console.warn(name, message);
+var channel = [];
+
+function errHandler(err) {
+	console.warn(err);
 }
 
-navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(function (stream) {
-	localStream = stream;
-	pc.addStream(stream);
-}).catch(function (error) {
-	errHandler(error.name, error.message);
-});
+localConnection.ondatachannel = function (event) {
+	console.log('event', event);
+	functionalChannel(event.channel);
+};
 
-// Create a offset local
+function functionalChannel(event) {
+	if (event.label == "chatChannel") {
+		event.onopen = function (e) {
+			console.log('chat channel is open', e);
+		}
+		event.onmessage = function (e) {
+			console.log('chat channel have message', e);
+			chat.innerHTML = chat.innerHTML + "<pre>" + e.data + "</pre>"
+		}
+		event.onclose = function () {
+			console.log('chat channel closed');
+		}
+	}
+}
+
+localConnection.onicecandidate = function (event) {
+	var cand = event.candidate;
+	console.log('cand', cand);
+	if (!cand) {
+		console.log('iceGatheringState complete', localConnection.localDescription.sdp);
+		localOffer.value = JSON.stringify(localConnection.localDescription);
+	} else {
+		console.log('candidate', cand.candidate);
+	}
+}
+
+localConnection.oniceconnectionstatechange = function () {
+	console.log('iceconnectionstatechange: ', localConnection.iceConnectionState);
+}
+
+localConnection.onconnectionstatechange = function (event) {
+	console.log('onconnection ', event);
+}
+
+remoteOfferGot.onclick = function () {
+	remoteConnection = new RTCSessionDescription(JSON.parse(remoteOffer.value));
+	console.log('remoteOffer \n', remoteConnection);
+	localConnection.setRemoteDescription(remoteConnection).then(function () {
+		console.log('setRemoteDescription ok');
+		if (remoteConnection.type == "offer") {
+			localConnection.createAnswer().then(function (description) {
+				console.log('createAnswer 200 ok \n', description);
+				localConnection.setLocalDescription(description).then(function () {
+				}).catch(errHandler);
+			}).catch(errHandler);
+		}
+	}).catch(errHandler);
+}
+
 localOfferSet.onclick = function () {
 	if (enable_chat.checked) {
-		_chatChannel = pc.createDataChannel('chatChannel');
-		chatChannel(_chatChannel);
+		channel.chat = localConnection.createDataChannel('chatChannel');
+		functionalChannel(channel.chat);
 	}
-	pc.createOffer().then(des => {
+	localConnection.createOffer().then(des => {
 		console.log('createOffer ok ');
-		pc.setLocalDescription(des).then(() => {
+		localConnection.setLocalDescription(des).then(() => {
 			setTimeout(function () {
-				if (pc.iceGatheringState == "complete") {
+				if (localConnection.iceGatheringState == "complete") {
 					return;
 				} else {
 					console.log('after GetherTimeout');
-					localOffer.value = JSON.stringify(pc.localDescription);
+					localOffer.value = JSON.stringify(localConnection.localDescription);
 				}
 			}, 2000);
 			console.log('setLocalDescription ok');
-		}).catch(function (error) {
-			errHandler(error.name, error.message);
-		});
-	}).catch(function (error) {
-		errHandler(error.name, error.message);
-	});
+		}).catch(errHandler);
+	}).catch(errHandler);
 }
 
-// Chat
-function chatChannel(e) {
-	_chatChannel.onopen = function (e) {
-		console.log('chat channel is open', e);
-	}
-	_chatChannel.onmessage = function (e) {
-		chat.innerHTML = chat.innerHTML + "<pre>" + e.data + "</pre>"
-	}
-	_chatChannel.onclose = function () {
-		console.log('chat channel closed');
-	}
-}
-
-//configs control
-pc.onicecandidate = function (event) {
-	if (event.candidate) {
-		console.groupCollapsed('iceGatheringState complete');
-		console.log(pc.localDescription.sdp);
-		localOffer.value = JSON.stringify(pc.localDescription);
-	} else {
-		console.log(event.candidate);
-	}
-}
-pc.oniceconnectionstatechange = function () {
-	console.log('iceconnectionstatechange: ', pc.iceConnectionState);
-}
-pc.onaddstream = function (event) {
-	console.log('remote onaddstream', event.stream);
-	remote.src = URL.createObjectURL(event.stream);
-}
-pc.onconnection = function (event) {
-	console.log('onconnection ', event);
+function sendMsg() {
+	var text = sendTxt.value;
+	chat.innerHTML = chat.innerHTML + "<pre class='sent'>" + text + "</pre>";
+	channel.chat.send(text);
+	sendTxt.value = "";
+	return false;
 }

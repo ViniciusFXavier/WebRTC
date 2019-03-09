@@ -29,6 +29,7 @@ function sendMsg() {
 	sendTxt.value = "";
 	return false;
 }
+
 pc.ondatachannel = function (e) {
 	if (e.channel.label == "fileChannel") {
 		console.log('fileChannel Received -', e);
@@ -58,8 +59,8 @@ pc.onaddstream = function (e) {
 	console.log('remote onaddstream', e.stream);
 	remote.src = URL.createObjectURL(e.stream);
 }
-pc.onconnection = function (e) {
-	console.log('onconnection ', e);
+pc.onconnectionstatechange = function (event) {
+	console.log('onconnectionstatechange ', event);
 }
 
 remoteOfferGot.onclick = function () {

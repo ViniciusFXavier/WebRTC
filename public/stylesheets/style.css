@@ -1,5 +1,5 @@
 body {
-  padding: 50px;
+  padding: 20px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
@@ -9,4 +9,14 @@ a {
 
 .sent{
   color:blue;
+}
+
+video {
+  width: 350px;
+  height: 200px;
+}
+
+div.hr {
+  padding-bottom: 10px;
+  border-bottom: 1px solid black;
 }
