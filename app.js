@@ -4,9 +4,12 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var WebSocketServer = require('ws').Server;
+var messageHandler = require('./bin/messageHandler');
+var wss = new WebSocketServer({ port: 3001 });
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var testeRouter = require('./routes/teste');
 
 var app = express();
 
@@ -21,7 +24,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/teste', testeRouter);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
@@ -38,6 +40,18 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+wss.on('connection', function connection(ws, req) {
+  console.log('connection from a client');
+  //console.log("id:", req.headers['sec-websocket-key']);
+  ws.on('message', function incoming(message) {
+      var objMessage = JSON.parse(message);
+      messageHandler(ws, objMessage);
+  });
+  ws.on('close', function (event) {
+      messageHandler(ws, {type: 'close'});
+  });
 });
 
 module.exports = app;

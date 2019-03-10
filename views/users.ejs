@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebRTC with Server</title>
+</head>
+
+<body>
+    <div id="initialChatArea">
+        Your name: <input id="name" /><button id="start">Start chat</button>
+    </div>
+    <table id="mainChatArea" style="display: none">
+        <tbody>
+            <tr>
+                <td colspan="2">
+                    <b>Dialog</b> <br />
+                    <p id="received"></p>
+                    <hr />
+                </td>
+        </tbody>
+        <tfooter>
+            <tr>
+                <td>
+                    <textarea id="message" placeholder="Chat here"></textarea> <br />
+                    <button id="send">Send message</button>
+                </td>
+                <td style="vertical-align: top">
+                    Peers <br />
+                    <div id="peers"></div>
+                </td>
+            </tr>
+        </tfooter>
+    </table>
+</body>
+<script src="javascripts/withserver/signalingChannelFactory.js"></script>
+<script src="javascripts/withserver/chat.logic.js"></script>
+<script src="javascripts/withserver/chat.ui.js"></script>
+
+</html>
