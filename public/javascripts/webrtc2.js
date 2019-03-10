@@ -9,6 +9,13 @@ function errHandler(err) {
 	console.warn(err);
 }
 
+function init(err) {
+	if (navigator.mediaDevices.getUserMedia === undefined) {
+		enableCameraStream.disabled = true;
+	}
+}
+init();
+
 //Connection
 remoteOfferGot.onclick = function () {
 	remoteConnection = new RTCSessionDescription(JSON.parse(remoteOffer.value));
@@ -67,24 +74,36 @@ function chatChannel(event) {
 }
 
 // Get Media
-function getDisplayMedia() {
+enableScreenStream.onclick = function () {
+	stopMedia();
 	navigator.mediaDevices.getDisplayMedia({ video: SVGComponentTransferFunctionElement }).then(function (stream) {
 		console.log('screenStream', stream);
-		localScreenStream.srcObject = stream;
+		localVideoStream.srcObject = stream;
 		localConnection.addTrack(stream.getTracks()[0], stream);
 	}).catch(function (error) {
 		console.log('Screen: ' + error.name, error.message);
 	});
 }
-
-function getUserMedia() {
-	navigator.mediaDevices.getUserMedia({ audio: enableVideoMicrophone.checked, video: true }).then(function (stream) {
+enableCameraStream.onclick = function () {
+	stopMedia();
+	navigator.mediaDevices.getUserMedia({ audio: enableMicrophoneStream.checked, video: true }).then(function (stream) {
 		console.log('mediastream', stream);
 		localVideoStream.srcObject = stream;
-		localConnection.addTrack(mediaStream.getTracks()[0], mediaStream);
+		stream.getTracks().forEach(function(track) {
+			localConnection.addTrack(track, stream);
+		});
 	}).catch(function (error) {
 		console.log('Media: ' + error.name, error.message);
 	});
+}
+function stopMedia(){
+	var stream = localVideoStream.srcObject;
+	if (stream){
+		stream.getTracks().forEach(function (track) {
+			track.stop();
+		});
+	}
+	localVideoStream.srcObject = null;
 }
 
 localConnection.onicecandidate = function (event) {
@@ -97,19 +116,6 @@ localConnection.onicecandidate = function (event) {
 		console.log('candidate', cand);
 	}
 }
-function gotRemoteStream(event) {
-	console.log('gotRemoteStream', event.track, event.streams);
-	remoteVideoStream.srcObject = null;
-	remoteScreenStream.srcObject = null;
-	var teste = false;
-	if (!teste) {
-		teste = true;
-		remoteScreenStream.srcObject = event.streams[0];
-		return;
-	}
-
-	remoteVideoStream.srcObject = event.streams[0];
-}
 localConnection.ontrack = function (event) {
 	remoteVideoStream.srcObject = event.streams[0];
 	remoteVideoStream.play();
@@ -117,6 +123,7 @@ localConnection.ontrack = function (event) {
 
 localConnection.oniceconnectionstatechange = function () {
 	console.log('iceconnectionstatechange: ', localConnection.iceConnectionState);
+	connectionStatus.innerHTML = localConnection.iceConnectionState;
 }
 
 localConnection.onconnectionstatechange = function (event) {
@@ -142,15 +149,6 @@ function sendMsg() {
 }
 
 // View
-enableStream.addEventListener('change', function () {
-	var divLocalStream = document.getElementById("divLocalStream");
-	if (this.checked) {
-		divLocalStream.classList.remove("display-none");
-	} else {
-		divLocalStream.classList.add("display-none");
-	}
-});
-
 enableChat.addEventListener('change', function () {
 	var divChat = document.getElementById("divChat");
 	if (this.checked) {
@@ -158,5 +156,19 @@ enableChat.addEventListener('change', function () {
 		chatChannel(channel.chat);
 	} else {
 		channel.chat.close();
+	}
+});
+enableMicrophoneStream.addEventListener('change', function () {
+	var stream = localVideoStream.srcObject;
+	if (stream){
+		if (this.checked) {
+			stream.getAudioTracks().forEach(function (track) {
+				track.enable = true;
+			});
+		} else {
+			stream.getAudioTracks().forEach(function (track) {
+				track.enable = false;
+			});
+		}
 	}
 });

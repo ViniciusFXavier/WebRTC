@@ -42,28 +42,23 @@
 
             <div class="hr">
                 <h3>Stream</h3>
-                <p><input type="checkbox" id="enableStream" checked><span>Enable Stream</span></p>
                 <div id="divLocalStream">
                     <h4>Local</h4>
                     <div style="display: inline-block;">
-                        <p><input type="checkbox" id="enableVideoStream" checked><span>Camera</span>
-                            <input type="checkbox" id="enableVideoMicrophone" checked><span>Enable Microphone</span></p>
+                        <p>
+                            <button id="enableCameraStream">Camera</button>
+                            <input type="checkbox" id="enableMicrophoneStream" checked><span>Enable Microphone</span>
+                            <button id="enableScreenStream">Screen</button>
+                            <button type="submit" onclick="stopMedia()">Stop</button>
+                        </p>
                         <video id="localVideoStream" autoplay muted controls></video>
-                    </div>
-                    <div style="display: inline-block;">
-                        <p><input type="checkbox" id="enableScreenStream" checked><span>Screen</span></p>
-                        <video id="localScreenStream" autoplay controls></video>
                     </div>
                 </div>
                 <div>
                     <h4>Remote</h4>
                     <div style="display: inline-block;">
-                        <p>Camera</p>
+                        <p>Camera/Screen</p>
                         <video id="remoteVideoStream" autoplay controls></video>
-                    </div>
-                    <div style="display: inline-block;">
-                        <p>Screen</p>
-                        <video id="remoteScreenStream" autoplay controls></video>
                     </div>
                 </div>
             </div>
