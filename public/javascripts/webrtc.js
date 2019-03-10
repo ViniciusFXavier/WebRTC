@@ -1,7 +1,16 @@
 var configuration = { iceServers: [{ urls: [] }] };
 const localConnection = new RTCPeerConnection(configuration);
 var remoteConnection = null;
-var localStream = new MediaStream();
+
+//var file controler
+var fileObject = {
+	sendFileDom: {},
+	recFileDom: {},
+	receiveBuffer: [],
+	receivedSize: 0,
+	file: null,
+	bytesPrev: null
+}
 
 var channel = [];
 
@@ -36,6 +45,10 @@ localOfferSet.onclick = function () {
 		channel.chat = localConnection.createDataChannel('chat');
 		chatChannel(channel.chat);
 	}
+	if (enableFileTransfer.checked) {
+		channel.file = localConnection.createDataChannel('file');
+		fileChannel(channel.file);
+	}
 	localConnection.createOffer().then(des => {
 		console.log('createOffer ok ');
 		localConnection.setLocalDescription(des).then(() => {
@@ -59,6 +72,11 @@ localConnection.ondatachannel = function (event) {
 		channel.chat = event.channel;
 		chatChannel(event.channel);
 	}
+	if (event.channel.label == "file") {
+		console.log('file Channel Received -', event);
+		channel.file = event.channel;
+		fileChannel(event.channel);
+	}
 };
 function chatChannel(event) {
 	channel.chat.onopen = function (event) {
@@ -71,6 +89,90 @@ function chatChannel(event) {
 	channel.chat.onclose = function () {
 		console.log('chat channel closed');
 	}
+}
+function fileChannel(e) {
+	channel.file.onopen = function (e) {
+		console.log('file channel is open', e);
+	}
+	channel.file.onmessage = function (e) {
+		// Figure out data type
+		var type = Object.prototype.toString.call(e.data), data;
+		if (type == "[object ArrayBuffer]") {
+			data = e.data;
+			fileObject.receiveBuffer.push(data);
+			fileObject.receivedSize += data.byteLength;
+			recFileProg.value = fileObject.receivedSize;
+			if (fileObject.receivedSize == fileObject.recFileDom.size) {
+				var received = new window.Blob(fileObject.receiveBuffer);
+				fileDownload.href = URL.createObjectURL(received);
+				fileDownload.innerHTML = "download";
+				fileDownload.download = fileObject.recFileDom.name;
+				// rest
+				fileObject.receiveBuffer = [];
+				fileObject.receivedSize = 0;
+				// clearInterval(window.timer);	
+			}
+		} else if (type == "[object String]") {
+			data = JSON.parse(e.data);
+		} else if (type == "[object Blob]") {
+			data = e.data;
+			fileDownload.href = URL.createObjectURL(data);
+			fileDownload.innerHTML = "download";
+			fileDownload.download = fileObject.recFileDom.name;
+		}
+
+		// Handle initial msg exchange
+		if (data.fileInfo) {
+			if (data.fileInfo == "areYouReady") {
+				fileObject.recFileDom = data;
+				recFileProg.max = data.size;
+				var sendData = JSON.stringify({ fileInfo: "readyToReceive" });
+				channel.file.send(sendData);
+				// window.timer = setInterval(function(){
+				// 	Stats();
+				// },1000)				
+			} else if (data.fileInfo == "readyToReceive") {
+				sendFileProg.max = fileObject.sendFileDom.size;
+				sendFileinChannel(); // Start sending the file
+			}
+			console.log('_fileChannel: ', data.fileInfo);
+		}
+	}
+	channel.file.onclose = function () {
+		console.log('file channel closed');
+	}
+}
+
+function sendMsg() {
+	var text = sendTxt.value;
+	chat.innerHTML = chat.innerHTML + "<pre class='sent'>" + text + "</pre>";
+	channel.chat.send(text);
+	sendTxt.value = "";
+	return false;
+}
+function sendFile() {
+	if (!fileTransfer.value) return;
+	var fileInfo = JSON.stringify(fileObject.sendFileDom);
+	channel.file.send(fileInfo);
+	console.log('file info sent');
+}
+function sendFileinChannel() {
+	var chunkSize = 16384;
+	var sliceFile = function (offset) {
+		var reader = new window.FileReader();
+		reader.onload = (function () {
+			return function (e) {
+				channel.file.send(e.target.result);
+				if (file.size > offset + e.target.result.byteLength) {
+					window.setTimeout(sliceFile, 0, offset + chunkSize);
+				}
+				sendFileProg.value = offset + e.target.result.byteLength
+			};
+		})(file);
+		var slice = file.slice(offset, offset + chunkSize);
+		reader.readAsArrayBuffer(slice);
+	};
+	sliceFile(0);
 }
 
 // Get Media
@@ -89,16 +191,16 @@ enableCameraStream.onclick = function () {
 	navigator.mediaDevices.getUserMedia({ audio: enableMicrophoneStream.checked, video: true }).then(function (stream) {
 		console.log('mediastream', stream);
 		localVideoStream.srcObject = stream;
-		stream.getTracks().forEach(function(track) {
+		stream.getTracks().forEach(function (track) {
 			localConnection.addTrack(track, stream);
 		});
 	}).catch(function (error) {
 		console.log('Media: ' + error.name, error.message);
 	});
 }
-function stopMedia(){
+function stopMedia() {
 	var stream = localVideoStream.srcObject;
-	if (stream){
+	if (stream) {
 		stream.getTracks().forEach(function (track) {
 			track.stop();
 		});
@@ -140,17 +242,16 @@ localConnection.onconnectionstatechange = function (event) {
 	}
 }
 
-function sendMsg() {
-	var text = sendTxt.value;
-	chat.innerHTML = chat.innerHTML + "<pre class='sent'>" + text + "</pre>";
-	channel.chat.send(text);
-	sendTxt.value = "";
-	return false;
-}
-
 // View
+enableFileTransfer.addEventListener('change', function () {
+	if (this.checked) {
+		channel.file = localConnection.createDataChannel('file');
+		chatChannel(channel.file);
+	} else {
+		channel.file.close();
+	}
+});
 enableChat.addEventListener('change', function () {
-	var divChat = document.getElementById("divChat");
 	if (this.checked) {
 		channel.chat = localConnection.createDataChannel('chat');
 		chatChannel(channel.chat);
@@ -160,15 +261,28 @@ enableChat.addEventListener('change', function () {
 });
 enableMicrophoneStream.addEventListener('change', function () {
 	var stream = localVideoStream.srcObject;
-	if (stream){
+	if (stream) {
 		if (this.checked) {
 			stream.getAudioTracks().forEach(function (track) {
-				track.enable = true;
+				// track.play();
 			});
 		} else {
 			stream.getAudioTracks().forEach(function (track) {
-				track.enable = false;
+				track.stop();
 			});
 		}
 	}
 });
+fileTransfer.onchange = function (e) {
+	var files = fileTransfer.files;
+	if (files.length > 0) {
+		file = files[0];
+		fileObject.sendFileDom.name = file.name;
+		fileObject.sendFileDom.size = file.size;
+		fileObject.sendFileDom.type = file.type;
+		fileObject.sendFileDom.fileInfo = "areYouReady";
+		console.log(fileObject.sendFileDom);
+	} else {
+		console.log('No file selected');
+	}
+}
