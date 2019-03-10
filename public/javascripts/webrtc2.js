@@ -10,8 +10,6 @@ function errHandler(err) {
 }
 
 //Connection
-getDisplayMedia();
-getUserMedia();
 remoteOfferGot.onclick = function () {
 	remoteConnection = new RTCSessionDescription(JSON.parse(remoteOffer.value));
 	console.log('remoteOffer \n', remoteConnection);
@@ -27,7 +25,6 @@ remoteOfferGot.onclick = function () {
 	}).catch(errHandler);
 }
 localOfferSet.onclick = function () {
-	console.log('aaaaaaaaaaaaaaaaaaaaaaa')
 	if (enableChat.checked) {
 		channel.chat = localConnection.createDataChannel('chat');
 		chatChannel(channel.chat);
@@ -71,25 +68,20 @@ function chatChannel(event) {
 
 // Get Media
 function getDisplayMedia() {
-	navigator.mediaDevices.getDisplayMedia({ video: enableScreenStream.checked }).then(function (screenStream) {
-		console.log('screenStream', screenStream);
-		localStream.addTrack(screenStream.getVideoTracks()[0]);
-		localScreenStream.srcObject = localStream;
-		console.log('screenStream - localStream', localStream.getTracks());
-		localConnection.addTrack(localStream.getTracks()[0], screenStream);
+	navigator.mediaDevices.getDisplayMedia({ video: SVGComponentTransferFunctionElement }).then(function (stream) {
+		console.log('screenStream', stream);
+		localScreenStream.srcObject = stream;
+		localConnection.addTrack(stream.getTracks()[0], stream);
 	}).catch(function (error) {
 		console.log('Screen: ' + error.name, error.message);
 	});
 }
+
 function getUserMedia() {
-	navigator.mediaDevices.getUserMedia({ audio: enableVideoMicrophone.checked, video: enableVideoStream.checked }).then(function (mediastream) {
-		console.log('mediastream', mediastream);
-		mediastream.getTracks().forEach(function(track) {
-			localStream.addTrack(track);
-		})
-		localVideoStream.srcObject = mediastream;
-		console.log('mediastream - localStream', localStream.getTracks());
-		localConnection.addTrack(localStream.getTracks()[0], mediastream);
+	navigator.mediaDevices.getUserMedia({ audio: enableVideoMicrophone.checked, video: true }).then(function (stream) {
+		console.log('mediastream', stream);
+		localVideoStream.srcObject = stream;
+		localConnection.addTrack(mediaStream.getTracks()[0], mediaStream);
 	}).catch(function (error) {
 		console.log('Media: ' + error.name, error.message);
 	});
@@ -110,17 +102,17 @@ function gotRemoteStream(event) {
 	remoteVideoStream.srcObject = null;
 	remoteScreenStream.srcObject = null;
 	var teste = false;
-	if (!teste){
-	 	teste = true;
-	 	remoteScreenStream.srcObject = event.streams[0];
-	 	return;
+	if (!teste) {
+		teste = true;
+		remoteScreenStream.srcObject = event.streams[0];
+		return;
 	}
 
 	remoteVideoStream.srcObject = event.streams[0];
 }
 localConnection.ontrack = function (event) {
-	console.log('ontrack', event);
-	gotRemoteStream(event);
+	remoteVideoStream.srcObject = event.streams[0];
+	remoteVideoStream.play();
 };
 
 localConnection.oniceconnectionstatechange = function () {
